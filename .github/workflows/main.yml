@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test-unix:
     runs-on: ubuntu-latest
@@ -22,13 +25,12 @@ jobs:
       - name: Install deps (clean)
         run: npm ci
 
+      # ВАЖНО: сначала генерим typechain-типы
+      - name: Hardhat compile (generate types)
+        run: npx hardhat compile
+
       - name: Prettier check
         run: npx prettier --check .
 
-      # ВАЖНО: сначала генерим типы (TypeChain)
-      - name: Hardhat compile
-        run: npx hardhat compile
-
-      # Теперь типы есть -> tsc проходит
       - name: TypeScript build
         run: npx tsc -p tsconfig.json
