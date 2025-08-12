@@ -17,26 +17,19 @@ describe("AuraScore (FHEVM)", function () {
 
     // Готовим зашифрованные входы (оба параметра в одном proof)
     const buf = hre.fhevm.createEncryptedInput(addr, user.address);
-    buf.add32(3);    // age
-    buf.add32(12);   // dapps
+    buf.add32(3); // age
+    buf.add32(12); // dapps
     const enc = await buf.encrypt();
 
     // Вызываем контракт с handles + общим proof
-    const tx = await aura
-      .connect(user)
-      .calculateScore(enc.handles[0], enc.handles[1], enc.inputProof);
+    const tx = await aura.connect(user).calculateScore(enc.handles[0], enc.handles[1], enc.inputProof);
     await tx.wait();
 
     // Читаем зашифрованный результат
     const encryptedScore = await aura.connect(user).getMyScore();
 
     // Дешифруем от имени пользователя
-    const clear = await hre.fhevm.userDecryptEuint(
-      FhevmType.euint32,
-      encryptedScore,
-      addr,
-      user
-    );
+    const clear = await hre.fhevm.userDecryptEuint(FhevmType.euint32, encryptedScore, addr, user);
 
     // 3*10 + 12*25 = 330
     expect(Number(clear)).to.equal(330);

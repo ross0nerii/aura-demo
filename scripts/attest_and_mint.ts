@@ -2,11 +2,11 @@
 import { ethers } from "hardhat";
 
 const AURA_SCORE = "0xD9C3DaF5c2Fa63392EA7863E0C7A7bE6D5e011Ab";
-const AURA_TIER  = "0xE87918Bb84339c575D71D9C9Dc7B1997FE358431";
+const AURA_TIER = "0xE87918Bb84339c575D71D9C9Dc7B1997FE358431";
 
 // В SDK и при создании контрактов используем lower-case
 const AURA_SCORE_LC = AURA_SCORE.toLowerCase();
-const AURA_TIER_LC  = AURA_TIER.toLowerCase();
+const AURA_TIER_LC = AURA_TIER.toLowerCase();
 
 const toRawHex = (x: string | Uint8Array): string => {
   if (typeof x === "string") return x.replace(/^0x/i, "");
@@ -31,30 +31,30 @@ async function main() {
 
   // 2) Расшифровка (позиционные аргументы — как в рабочем call_aura.ts)
   const keypair = instance.generateKeypair();
-  const pubRaw  = toRawHex(keypair.publicKey);
+  const pubRaw = toRawHex(keypair.publicKey);
   const privRaw = toRawHex(keypair.privateKey);
   const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-  const durationDays   = "10";
+  const durationDays = "10";
 
   const eip712 = instance.createEIP712(pubRaw, [AURA_SCORE_LC], startTimeStamp, durationDays);
   const signature = await signer.signTypedData(
     eip712.domain,
     { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
-    eip712.message
+    eip712.message,
   );
   const sigRaw = signature.replace(/^0x/i, "");
   console.log("RAW lens -> pub:", pubRaw.length, "priv:", privRaw.length, "sig:", sigRaw.length);
 
   const pairs = [{ handle, contractAddress: AURA_SCORE_LC }];
   const res = await instance.userDecrypt(
-    pairs,               // [{ handle, contractAddress }]
-    privRaw,             // privateKey (raw hex, без 0x)
-    pubRaw,              // publicKey  (raw hex, без 0x)
-    sigRaw,              // подпись    (raw hex, без 0x)
-    [AURA_SCORE_LC],     // адреса контрактов (lower-case)
+    pairs, // [{ handle, contractAddress }]
+    privRaw, // privateKey (raw hex, без 0x)
+    pubRaw, // publicKey  (raw hex, без 0x)
+    sigRaw, // подпись    (raw hex, без 0x)
+    [AURA_SCORE_LC], // адреса контрактов (lower-case)
     user,
     startTimeStamp,
-    durationDays
+    durationDays,
   );
 
   const score = Number((res as any)[handle] as bigint);
@@ -68,10 +68,18 @@ async function main() {
   const deadline = Math.floor(Date.now() / 1000) + 3600;
 
   const tryMintA = async () => {
-    const abi = ["function mintTier(address user,uint256 tier,uint256 deadline,bytes signature) public returns (uint256)"];
+    const abi = [
+      "function mintTier(address user,uint256 tier,uint256 deadline,bytes signature) public returns (uint256)",
+    ];
     const c = await ethers.getContractAt(abi, AURA_TIER_LC, signer);
     const domain = { name: "AuraTier", version: "1", chainId, verifyingContract: AURA_TIER_LC } as const;
-    const types  = { MintTier: [{name:"user",type:"address"},{name:"tier",type:"uint256"},{name:"deadline",type:"uint256"}] } as const;
+    const types = {
+      MintTier: [
+        { name: "user", type: "address" },
+        { name: "tier", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    } as const;
     const sig = await signer.signTypedData(domain, types as any, { user, tier, deadline });
     console.log("[A] mintTier(user,tier,deadline,sig)...");
     return await (await c.mintTier(user, tier, deadline, sig)).wait();
@@ -81,7 +89,12 @@ async function main() {
     const abi = ["function mintTier(uint256 tier,uint256 deadline,bytes signature) public returns (uint256)"];
     const c = await ethers.getContractAt(abi, AURA_TIER_LC, signer);
     const domain = { name: "AuraTier", version: "1", chainId, verifyingContract: AURA_TIER_LC } as const;
-    const types  = { MintTierNoUser: [{name:"tier",type:"uint256"},{name:"deadline",type:"uint256"}] } as const;
+    const types = {
+      MintTierNoUser: [
+        { name: "tier", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    } as const;
     const sig = await signer.signTypedData(domain, types as any, { tier, deadline });
     console.log("[B] mintTier(tier,deadline,sig)...");
     return await (await c.mintTier(tier, deadline, sig)).wait();
@@ -96,12 +109,19 @@ async function main() {
 
   let mined;
   for (const attempt of [tryMintA, tryMintB, tryMintC]) {
-    try { mined = await attempt(); break; }
-    catch (e:any){ console.log("Mint path failed:", e?.reason || e?.message || e); }
+    try {
+      mined = await attempt();
+      break;
+    } catch (e: any) {
+      console.log("Mint path failed:", e?.reason || e?.message || e);
+    }
   }
   if (!mined) throw new Error("No mint path worked. Need exact AuraTier ABI.");
 
   console.log("✓ Minted! tx:", mined?.hash || mined);
 }
 
-main().catch((e)=>{ console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

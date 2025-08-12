@@ -11,4 +11,7 @@ async function main() {
   console.log("AuraScore deployed at:", await aura.getAddress());
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

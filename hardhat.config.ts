@@ -5,8 +5,7 @@ import "@typechain/hardhat";
 import "hardhat-deploy"; // чтобы были задачи и типы deployments
 
 // Дефолты, чтобы CI не падал, если переменные не заданы
-const MNEMONIC_DEFAULT =
-  "test test test test test test test test test test test junk";
+const MNEMONIC_DEFAULT = "test test test test test test test test test test test junk";
 const RPC_DEFAULT = "https://rpc.sepolia.org";
 
 // Берём из ENV, иначе подставляем дефолт

@@ -14,4 +14,7 @@ async function main() {
   console.log("AuraTier deployed at:", await tier.getAddress());
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

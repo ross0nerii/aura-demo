@@ -13,14 +13,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract AuraTier is ERC1155, Ownable {
     using ECDSA for bytes32;
 
-    address public attester;              // наш оффчейн аттестор
+    address public attester; // наш оффчейн аттестор
     mapping(address => bool) public hasBadge; // 1 бейдж на адрес (для простоты)
     string public name = "Aura Tier Badge";
     string public symbol = "AURATIER";
 
     // EIP-712 domain separator (упрощённый)
-    bytes32 public constant MINT_TYPEHASH =
-        keccak256("MintTier(address user,uint256 tier,uint256 deadline)");
+    bytes32 public constant MINT_TYPEHASH = keccak256("MintTier(address user,uint256 tier,uint256 deadline)");
 
     bytes32 public DOMAIN_SEPARATOR;
 
