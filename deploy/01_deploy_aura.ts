@@ -1,17 +1,17 @@
-import { ethers } from "hardhat";
+// deploy/01_deploy_aura.ts
+import "hardhat-deploy";
+import type { DeployFunction, HardhatRuntimeEnvironment } from "hardhat-deploy/types";
 
-async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", await deployer.getAddress());
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await getNamedAccounts();
 
-  const Aura = await ethers.getContractFactory("AuraScore");
-  const aura = await Aura.deploy();
-  await aura.waitForDeployment();
+  await deploy("AuraScore", {
+    from: deployer,
+    log: true,
+  });
+};
 
-  console.log("AuraScore deployed at:", await aura.getAddress());
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+export default func;
+func.tags = ["AuraScore"];

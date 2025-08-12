@@ -1,20 +1,21 @@
-import { ethers } from "hardhat";
+// deploy/02_deploy_tier.ts
+import "hardhat-deploy";
+import type { DeployFunction, HardhatRuntimeEnvironment } from "hardhat-deploy/types";
 
-async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", await deployer.getAddress());
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy, get } = deployments;
+  const { deployer } = await getNamedAccounts();
 
-  const ATTESTER = await deployer.getAddress(); // для демо — сам деплоер
-  const URI = ""; // можно пусто или ipfs://.../{id}.json
+  const auraScore = await get("AuraScore");
 
-  const Tier = await ethers.getContractFactory("AuraTier");
-  const tier = await Tier.deploy(ATTESTER, URI);
-  await tier.waitForDeployment();
+  await deploy("AuraTier", {
+    from: deployer,
+    log: true,
+    args: [auraScore.address],
+  });
+};
 
-  console.log("AuraTier deployed at:", await tier.getAddress());
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+export default func;
+func.tags = ["AuraTier"];
+func.dependencies = ["AuraScore"]; // чтобы порядок был правильный

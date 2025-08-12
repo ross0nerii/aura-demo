@@ -1,17 +1,23 @@
-import { DeployFunction } from "hardhat-deploy/types";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+// deploy/deploy.ts
+import "hardhat-deploy"; // важно: подключает задачи/типы плагина
 
-const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployer } = await hre.getNamedAccounts();
-  const { deploy } = hre.deployments;
+import type { HardhatRuntimeEnvironment } from "hardhat-deploy/types";
+import type { DeployFunction } from "hardhat-deploy/types";
 
-  const deployedFHECounter = await deploy("FHECounter", {
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
+
+  const { deployer } = await getNamedAccounts();
+
+  const deployed = await deploy("FHECounter", {
     from: deployer,
     log: true,
   });
 
-  console.log(`FHECounter contract: `, deployedFHECounter.address);
+  console.log(`FHECounter contract: ${deployed.address}`);
 };
+
 export default func;
-func.id = "deploy_fheCounter"; // id required to prevent reexecution
+func.id = "deploy_fheCounter";
 func.tags = ["FHECounter"];
