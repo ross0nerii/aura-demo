@@ -1,19 +1,16 @@
-# fhevm
-fhevmTemp
+# игнорируем CI-яндекс YAML
+.github/workflows/*.yml
 
-# directories
-.coverage_artifacts
-.coverage_cache
-.coverage_contracts
-artifacts
-build
-cache
-coverage
-dist
+# сборочные и генерируемые папки
 node_modules
+dist
+cache
+artifacts
+coverage
+fhevmTemp
 types
 
-# files
+# вспомогательные/лок файлы
 *.env
 *.log
 .DS_Store
