@@ -1,7 +1,8 @@
 // hardhat.config.ts
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
-import "@typechain/hardhat";             // ← ВАЖНО: подключаем плагин typechain
+import "@typechain/hardhat";
+import "hardhat-deploy"; // чтобы были задачи и типы deployments
 
 // Дефолты, чтобы CI не падал, если переменные не заданы
 const MNEMONIC_DEFAULT =
@@ -21,7 +22,7 @@ const config: HardhatUserConfig = {
     },
   },
 
-  // Генерация типов для ethers v6
+  // Генерация типов для ethers v6 (не мешает CI)
   typechain: {
     outDir: "types",
     target: "ethers-v6",
