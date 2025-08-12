@@ -21,7 +21,7 @@ async function main() {
 
   // --- SDK ---
   const { createInstance, SepoliaConfig } = await import("@zama-fhe/relayer-sdk/node");
-  const instance = await createInstance({ ...SepoliaConfig, requestTimeoutMs: 20000 });
+  const instance = await createInstance(SepoliaConfig);
   console.log("✓ SDK ready");
 
   // 1) handle из AuraScore

@@ -1,6 +1,6 @@
 // deploy/02_deploy_tier.ts
-import "hardhat-deploy";
-import type { DeployFunction, HardhatRuntimeEnvironment } from "hardhat-deploy/types";
+import type { DeployFunction } from "hardhat-deploy/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;

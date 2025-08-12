@@ -32,13 +32,10 @@ async function main() {
 
   // 1) SDK
   console.log("1) Import Zama SDK…");
-  const mod = await withTimeout(import("@zama-fhe/relayer-sdk/node"), 5000, "import SDK");
-  const { createInstance, SepoliaConfig } = mod;
-  const instance = await withTimeout(
-    createInstance({ ...SepoliaConfig, requestTimeoutMs: 20000 }),
-    8000,
-    "createInstance",
-  );
+  const { createInstance, SepoliaConfig } = await withTimeout(import("@zama-fhe/relayer-sdk/node"), 5000, "import SDK");
+
+  // БЕЗ requestTimeoutMs! просто передаём SepoliaConfig
+  const instance = await withTimeout(createInstance(SepoliaConfig), 8000, "createInstance");
   console.log("   ✓ SDK ready");
 
   // 2) Шифруем входы
