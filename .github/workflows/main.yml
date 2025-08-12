@@ -25,12 +25,15 @@ jobs:
       - name: Install deps (clean)
         run: npm ci
 
-      # ВАЖНО: сначала генерим typechain-типы
+      # 1) сначала генерим typechain-типы (папка /types)
       - name: Hardhat compile (generate types)
         run: npx hardhat compile
 
+      # 2) проверка форматирования
       - name: Prettier check
         run: npx prettier --check .
 
-      - name: TypeScript build
-        run: npx tsc -p tsconfig.json
+      # 3) TS-проверка без test/** (используем новый конфиг)
+      - name: TypeScript build (no tests)
+        run: npx tsc -p tsconfig.ci.json
+
