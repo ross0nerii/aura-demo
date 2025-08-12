@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2022"], // get error cause (ErrorOptions)
+    "lib": ["es2022"],
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,
@@ -15,9 +15,12 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es2022" // get error cause (ErrorOptions)
+    "target": "es2022",
+
+    // ВАЖНО: вот это и нужно было добавить
+    "types": ["hardhat", "hardhat-deploy", "node"]
   },
   "exclude": ["node_modules"],
-  "files": ["./hardhat.config.ts"],
-  "include": ["src/**/*", "tasks/**/*", "test/**/*", "deploy/**/*", "types/"]
+  "files": ["hardhat.config.ts"],
+  "include": ["src/**/*", "tasks/**/*", "test/**/*", "deploy/**/*", "types/**/*", "scripts/**/*"]
 }
