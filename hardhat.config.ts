@@ -1,13 +1,14 @@
 // hardhat.config.ts
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
+import "@typechain/hardhat";             // ← ВАЖНО: подключаем плагин typechain
 
-// Значения по умолчанию — чтобы CI не падал, если секреты не заданы
+// Дефолты, чтобы CI не падал, если переменные не заданы
 const MNEMONIC_DEFAULT =
   "test test test test test test test test test test test junk";
 const RPC_DEFAULT = "https://rpc.sepolia.org";
 
-// Берём из ENV, а если нет — подставляем дефолт
+// Берём из ENV, иначе подставляем дефолт
 const MNEMONIC = process.env.MNEMONIC ?? MNEMONIC_DEFAULT;
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL ?? RPC_DEFAULT;
 
@@ -20,7 +21,7 @@ const config: HardhatUserConfig = {
     },
   },
 
-  // Генерация типов для ethers v6 (не мешает CI)
+  // Генерация типов для ethers v6
   typechain: {
     outDir: "types",
     target: "ethers-v6",
