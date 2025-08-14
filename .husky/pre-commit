@@ -1,2 +1,4 @@
-# авто-формат только затронутых файлов
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
 npx lint-staged
