@@ -2,9 +2,9 @@ name: Main
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -36,4 +36,3 @@ jobs:
       # 3) TS-проверка без test/** (используем новый конфиг)
       - name: TypeScript build (no tests)
         run: npx tsc -p tsconfig.ci.json
-

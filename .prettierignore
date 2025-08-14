@@ -1,22 +1,24 @@
-# игнорируем CI-яндекс YAML
-.github/workflows/*.yml
-
-# сборочные и генерируемые папки
+# зависимости
 node_modules
-dist
-cache
-artifacts
-coverage
-fhevmTemp
-types
 
-# вспомогательные/лок файлы
-*.env
+# артефакты hardhat/сборки/кеша
+artifacts
+cache
+coverage
+dist
+build
+out
+fhevmTemp
+typechain
+typechain-types
+*.tsbuildinfo
+
+# файлы окружения
+.env
+.env.*.local
+
+# сгенерированные адреса деплоя
+deployed_*.json
+
+# логи/временные
 *.log
-.DS_Store
-.pnp.*
-bun.lockb
-coverage.json
-package-lock.json
-pnpm-lock.yaml
-yarn.lock

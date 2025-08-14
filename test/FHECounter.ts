@@ -1,8 +1,8 @@
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers, fhevm } from "hardhat";
-import { FHECounter, FHECounter__factory } from "../types";
-import { expect } from "chai";
-import { FhevmType } from "@fhevm/hardhat-plugin";
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { ethers, fhevm } from 'hardhat';
+import { FHECounter, FHECounter__factory } from '../types';
+import { expect } from 'chai';
+import { FhevmType } from '@fhevm/hardhat-plugin';
 
 type Signers = {
   deployer: HardhatEthersSigner;
@@ -11,14 +11,14 @@ type Signers = {
 };
 
 async function deployFixture() {
-  const factory = (await ethers.getContractFactory("FHECounter")) as FHECounter__factory;
+  const factory = (await ethers.getContractFactory('FHECounter')) as FHECounter__factory;
   const fheCounterContract = (await factory.deploy()) as FHECounter;
   const fheCounterContractAddress = await fheCounterContract.getAddress();
 
   return { fheCounterContract, fheCounterContractAddress };
 }
 
-describe("FHECounter", function () {
+describe('FHECounter', function () {
   let signers: Signers;
   let fheCounterContract: FHECounter;
   let fheCounterContractAddress: string;
@@ -38,14 +38,14 @@ describe("FHECounter", function () {
     ({ fheCounterContract, fheCounterContractAddress } = await deployFixture());
   });
 
-  it("encrypted count should be uninitialized after deployment", async function () {
+  it('encrypted count should be uninitialized after deployment', async function () {
     const encryptedCount = await fheCounterContract.getCount();
     // Expect initial count to be bytes32(0) after deployment,
     // (meaning the encrypted count value is uninitialized)
     expect(encryptedCount).to.eq(ethers.ZeroHash);
   });
 
-  it("increment the counter by 1", async function () {
+  it('increment the counter by 1', async function () {
     const encryptedCountBeforeInc = await fheCounterContract.getCount();
     expect(encryptedCountBeforeInc).to.eq(ethers.ZeroHash);
     const clearCountBeforeInc = 0;
@@ -67,13 +67,13 @@ describe("FHECounter", function () {
       FhevmType.euint32,
       encryptedCountAfterInc,
       fheCounterContractAddress,
-      signers.alice,
+      signers.alice
     );
 
     expect(clearCountAfterInc).to.eq(clearCountBeforeInc + clearOne);
   });
 
-  it("decrement the counter by 1", async function () {
+  it('decrement the counter by 1', async function () {
     // Encrypt constant 1 as a euint32
     const clearOne = 1;
     const encryptedOne = await fhevm
@@ -88,7 +88,9 @@ describe("FHECounter", function () {
     await tx.wait();
 
     // Then decrement by 1, count goes back to 0
-    tx = await fheCounterContract.connect(signers.alice).decrement(encryptedOne.handles[0], encryptedOne.inputProof);
+    tx = await fheCounterContract
+      .connect(signers.alice)
+      .decrement(encryptedOne.handles[0], encryptedOne.inputProof);
     await tx.wait();
 
     const encryptedCountAfterDec = await fheCounterContract.getCount();
@@ -96,7 +98,7 @@ describe("FHECounter", function () {
       FhevmType.euint32,
       encryptedCountAfterDec,
       fheCounterContractAddress,
-      signers.alice,
+      signers.alice
     );
 
     expect(clearCountAfterInc).to.eq(0);

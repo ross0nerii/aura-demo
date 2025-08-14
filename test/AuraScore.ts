@@ -1,19 +1,19 @@
-import { expect } from "chai";
-import hre from "hardhat";
-import { FhevmType } from "@fhevm/hardhat-plugin";
+import { expect } from 'chai';
+import hre from 'hardhat';
+import { FhevmType } from '@fhevm/hardhat-plugin';
 
-describe("AuraScore (FHEVM)", function () {
-  it("computes encrypted score: age*10 + dapps*25", async () => {
+describe('AuraScore (FHEVM)', function () {
+  it('computes encrypted score: age*10 + dapps*25', async () => {
     const [user] = await hre.ethers.getSigners();
 
     // Деплой контракта
-    const Aura = await hre.ethers.getContractFactory("AuraScore");
+    const Aura = await hre.ethers.getContractFactory('AuraScore');
     const aura = await Aura.connect(user).deploy();
     await aura.waitForDeployment();
     const addr = await aura.getAddress();
 
     // Инициализация FHE сопроцессора в тестовой среде
-    await hre.fhevm.assertCoprocessorInitialized(aura, "AuraScore");
+    await hre.fhevm.assertCoprocessorInitialized(aura, 'AuraScore');
 
     // Готовим зашифрованные входы (оба параметра в одном proof)
     const buf = hre.fhevm.createEncryptedInput(addr, user.address);
@@ -22,7 +22,9 @@ describe("AuraScore (FHEVM)", function () {
     const enc = await buf.encrypt();
 
     // Вызываем контракт с handles + общим proof
-    const tx = await aura.connect(user).calculateScore(enc.handles[0], enc.handles[1], enc.inputProof);
+    const tx = await aura
+      .connect(user)
+      .calculateScore(enc.handles[0], enc.handles[1], enc.inputProof);
     await tx.wait();
 
     // Читаем зашифрованный результат

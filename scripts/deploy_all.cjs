@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-require("dotenv").config();
-const fs = require("fs");
-const path = require("path");
-const hre = require("hardhat");
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const hre = require('hardhat');
 
 function outFileForNetwork(networkName) {
   return path.join(process.cwd(), `deployed_${networkName}.json`);
@@ -28,17 +28,17 @@ async function deployWithArgs(name, args) {
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
-  console.log("Deployer:", deployer.address);
-  console.log("Network:", hre.network.name);
+  console.log('Deployer:', deployer.address);
+  console.log('Network:', hre.network.name);
 
   const { AURA_BASE_URI, ATTESTER_ADDRESS } = process.env;
 
   // 1) AuraScore (если контракта нет — пропустим и не упадём)
   let scoreAddr = null;
   try {
-    scoreAddr = await deployNoArgs("AuraScore");
+    scoreAddr = await deployNoArgs('AuraScore');
   } catch (e) {
-    console.log("⚠️  AuraScore не задеплоен (нет контракта или другая причина):", e.message);
+    console.log('⚠️  AuraScore не задеплоен (нет контракта или другая причина):', e.message);
   }
 
   // 2) AuraTier(attester, baseURI) — ОБЯЗАТЕЛЬНО два аргумента
@@ -46,14 +46,16 @@ async function main() {
     ? await hre.ethers.getAddress(ATTESTER_ADDRESS)
     : deployer.address;
 
-  if (!AURA_BASE_URI || !AURA_BASE_URI.includes("{id}")) {
-    throw new Error("AURA_BASE_URI обязателен и должен содержать {id}, пример: ipfs://cid/{id}.json");
+  if (!AURA_BASE_URI || !AURA_BASE_URI.includes('{id}')) {
+    throw new Error(
+      'AURA_BASE_URI обязателен и должен содержать {id}, пример: ipfs://cid/{id}.json'
+    );
   }
 
-  const tierAddr = await deployWithArgs("AuraTier", [attester, AURA_BASE_URI]);
+  const tierAddr = await deployWithArgs('AuraTier', [attester, AURA_BASE_URI]);
 
   // 3) FHECounter — без аргументов
-  const counterAddr = await deployNoArgs("FHECounter");
+  const counterAddr = await deployNoArgs('FHECounter');
 
   // Сохраняем адреса для фронтенда/скриптов
   const outfile = outFileForNetwork(hre.network.name);

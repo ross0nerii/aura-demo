@@ -1,6 +1,6 @@
-import { FhevmType } from "@fhevm/hardhat-plugin";
-import { task } from "hardhat/config";
-import type { TaskArguments } from "hardhat/types";
+import { FhevmType } from '@fhevm/hardhat-plugin';
+import { task } from 'hardhat/config';
+import type { TaskArguments } from 'hardhat/types';
 
 /**
  * Tutorial: Deploy and Interact Locally (--network localhost)
@@ -43,12 +43,15 @@ import type { TaskArguments } from "hardhat/types";
  *   - npx hardhat --network localhost task:address
  *   - npx hardhat --network sepolia task:address
  */
-task("task:address", "Prints the FHECounter address").setAction(async function (_taskArguments: TaskArguments, hre) {
+task('task:address', 'Prints the FHECounter address').setAction(async function (
+  _taskArguments: TaskArguments,
+  hre
+) {
   const { deployments } = hre;
 
-  const fheCounter = await deployments.get("FHECounter");
+  const fheCounter = await deployments.get('FHECounter');
 
-  console.log("FHECounter address is " + fheCounter.address);
+  console.log('FHECounter address is ' + fheCounter.address);
 });
 
 /**
@@ -56,8 +59,8 @@ task("task:address", "Prints the FHECounter address").setAction(async function (
  *   - npx hardhat --network localhost task:decrypt-count
  *   - npx hardhat --network sepolia task:decrypt-count
  */
-task("task:decrypt-count", "Calls the getCount() function of Counter Contract")
-  .addOptionalParam("address", "Optionally specify the Counter contract address")
+task('task:decrypt-count', 'Calls the getCount() function of Counter Contract')
+  .addOptionalParam('address', 'Optionally specify the Counter contract address')
   .setAction(async function (taskArguments: TaskArguments, hre) {
     const { ethers, deployments, fhevm } = hre;
 
@@ -65,17 +68,20 @@ task("task:decrypt-count", "Calls the getCount() function of Counter Contract")
 
     const FHECounterDeployement = taskArguments.address
       ? { address: taskArguments.address }
-      : await deployments.get("FHECounter");
+      : await deployments.get('FHECounter');
     console.log(`FHECounter: ${FHECounterDeployement.address}`);
 
     const signers = await ethers.getSigners();
 
-    const fheCounterContract = await ethers.getContractAt("FHECounter", FHECounterDeployement.address);
+    const fheCounterContract = await ethers.getContractAt(
+      'FHECounter',
+      FHECounterDeployement.address
+    );
 
     const encryptedCount = await fheCounterContract.getCount();
     if (encryptedCount === ethers.ZeroHash) {
       console.log(`encrypted count: ${encryptedCount}`);
-      console.log("clear count    : 0");
+      console.log('clear count    : 0');
       return;
     }
 
@@ -83,7 +89,7 @@ task("task:decrypt-count", "Calls the getCount() function of Counter Contract")
       FhevmType.euint32,
       encryptedCount,
       FHECounterDeployement.address,
-      signers[0],
+      signers[0]
     );
     console.log(`Encrypted count: ${encryptedCount}`);
     console.log(`Clear count    : ${clearCount}`);
@@ -94,9 +100,9 @@ task("task:decrypt-count", "Calls the getCount() function of Counter Contract")
  *   - npx hardhat --network localhost task:increment --value 1
  *   - npx hardhat --network sepolia task:increment --value 1
  */
-task("task:increment", "Calls the increment() function of FHECounter Contract")
-  .addOptionalParam("address", "Optionally specify the FHECounter contract address")
-  .addParam("value", "The increment value")
+task('task:increment', 'Calls the increment() function of FHECounter Contract')
+  .addOptionalParam('address', 'Optionally specify the FHECounter contract address')
+  .addParam('value', 'The increment value')
   .setAction(async function (taskArguments: TaskArguments, hre) {
     const { ethers, deployments, fhevm } = hre;
 
@@ -109,12 +115,15 @@ task("task:increment", "Calls the increment() function of FHECounter Contract")
 
     const FHECounterDeployement = taskArguments.address
       ? { address: taskArguments.address }
-      : await deployments.get("FHECounter");
+      : await deployments.get('FHECounter');
     console.log(`FHECounter: ${FHECounterDeployement.address}`);
 
     const signers = await ethers.getSigners();
 
-    const fheCounterContract = await ethers.getContractAt("FHECounter", FHECounterDeployement.address);
+    const fheCounterContract = await ethers.getContractAt(
+      'FHECounter',
+      FHECounterDeployement.address
+    );
 
     // Encrypt the value passed as argument
     const encryptedValue = await fhevm
@@ -131,7 +140,7 @@ task("task:increment", "Calls the increment() function of FHECounter Contract")
     console.log(`tx:${tx.hash} status=${receipt?.status}`);
 
     const newEncryptedCount = await fheCounterContract.getCount();
-    console.log("Encrypted count after increment:", newEncryptedCount);
+    console.log('Encrypted count after increment:', newEncryptedCount);
 
     console.log(`FHECounter increment(${value}) succeeded!`);
   });
@@ -141,9 +150,9 @@ task("task:increment", "Calls the increment() function of FHECounter Contract")
  *   - npx hardhat --network localhost task:decrement --value 1
  *   - npx hardhat --network sepolia task:decrement --value 1
  */
-task("task:decrement", "Calls the decrement() function of FHECounter Contract")
-  .addOptionalParam("address", "Optionally specify the FHECounter contract address")
-  .addParam("value", "The decrement value")
+task('task:decrement', 'Calls the decrement() function of FHECounter Contract')
+  .addOptionalParam('address', 'Optionally specify the FHECounter contract address')
+  .addParam('value', 'The decrement value')
   .setAction(async function (taskArguments: TaskArguments, hre) {
     const { ethers, deployments, fhevm } = hre;
 
@@ -156,12 +165,15 @@ task("task:decrement", "Calls the decrement() function of FHECounter Contract")
 
     const FHECounterDeployement = taskArguments.address
       ? { address: taskArguments.address }
-      : await deployments.get("FHECounter");
+      : await deployments.get('FHECounter');
     console.log(`FHECounter: ${FHECounterDeployement.address}`);
 
     const signers = await ethers.getSigners();
 
-    const fheCounterContract = await ethers.getContractAt("FHECounter", FHECounterDeployement.address);
+    const fheCounterContract = await ethers.getContractAt(
+      'FHECounter',
+      FHECounterDeployement.address
+    );
 
     // Encrypt the value passed as argument
     const encryptedValue = await fhevm
@@ -178,7 +190,7 @@ task("task:decrement", "Calls the decrement() function of FHECounter Contract")
     console.log(`tx:${tx.hash} status=${receipt?.status}`);
 
     const newEncryptedCount = await fheCounterContract.getCount();
-    console.log("Encrypted count after decrement:", newEncryptedCount);
+    console.log('Encrypted count after decrement:', newEncryptedCount);
 
     console.log(`FHECounter decrement(${value}) succeeded!`);
   });

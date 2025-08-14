@@ -1,14 +1,14 @@
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers, fhevm, deployments } from "hardhat";
-import { FHECounter } from "../types";
-import { expect } from "chai";
-import { FhevmType } from "@fhevm/hardhat-plugin";
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { ethers, fhevm, deployments } from 'hardhat';
+import { FHECounter } from '../types';
+import { expect } from 'chai';
+import { FhevmType } from '@fhevm/hardhat-plugin';
 
 type Signers = {
   alice: HardhatEthersSigner;
 };
 
-describe("FHECounterSepolia", function () {
+describe('FHECounterSepolia', function () {
   let signers: Signers;
   let fheCounterContract: FHECounter;
   let fheCounterContractAddress: string;
@@ -26,9 +26,9 @@ describe("FHECounterSepolia", function () {
     }
 
     try {
-      const FHECounterDeployement = await deployments.get("FHECounter");
+      const FHECounterDeployement = await deployments.get('FHECounter');
       fheCounterContractAddress = FHECounterDeployement.address;
-      fheCounterContract = await ethers.getContractAt("FHECounter", FHECounterDeployement.address);
+      fheCounterContract = await ethers.getContractAt('FHECounter', FHECounterDeployement.address);
     } catch (e) {
       (e as Error).message += ". Call 'npx hardhat deploy --network sepolia'";
       throw e;
@@ -43,7 +43,7 @@ describe("FHECounterSepolia", function () {
     steps = 0;
   });
 
-  it("increment the counter by 1", async function () {
+  it('increment the counter by 1', async function () {
     steps = 10;
 
     this.timeout(4 * 40000);
@@ -55,7 +55,7 @@ describe("FHECounterSepolia", function () {
       .encrypt();
 
     progress(
-      `Call increment(0) FHECounter=${fheCounterContractAddress} handle=${ethers.hexlify(encryptedZero.handles[0])} signer=${signers.alice.address}...`,
+      `Call increment(0) FHECounter=${fheCounterContractAddress} handle=${ethers.hexlify(encryptedZero.handles[0])} signer=${signers.alice.address}...`
     );
     let tx = await fheCounterContract
       .connect(signers.alice)
@@ -71,7 +71,7 @@ describe("FHECounterSepolia", function () {
       FhevmType.euint32,
       encryptedCountBeforeInc,
       fheCounterContractAddress,
-      signers.alice,
+      signers.alice
     );
     progress(`Clear FHECounter.getCount()=${clearCountBeforeInc}`);
 
@@ -82,9 +82,11 @@ describe("FHECounterSepolia", function () {
       .encrypt();
 
     progress(
-      `Call increment(1) FHECounter=${fheCounterContractAddress} handle=${ethers.hexlify(encryptedOne.handles[0])} signer=${signers.alice.address}...`,
+      `Call increment(1) FHECounter=${fheCounterContractAddress} handle=${ethers.hexlify(encryptedOne.handles[0])} signer=${signers.alice.address}...`
     );
-    tx = await fheCounterContract.connect(signers.alice).increment(encryptedOne.handles[0], encryptedOne.inputProof);
+    tx = await fheCounterContract
+      .connect(signers.alice)
+      .increment(encryptedOne.handles[0], encryptedOne.inputProof);
     await tx.wait();
 
     progress(`Call FHECounter.getCount()...`);
@@ -95,7 +97,7 @@ describe("FHECounterSepolia", function () {
       FhevmType.euint32,
       encryptedCountAfterInc,
       fheCounterContractAddress,
-      signers.alice,
+      signers.alice
     );
     progress(`Clear FHECounter.getCount()=${clearCountAfterInc}`);
 
