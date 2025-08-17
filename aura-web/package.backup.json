@@ -1,0 +1,37 @@
+
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "fs-extra";
+import { glob } from "glob";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const ROOT = path.resolve(__dirname, "..", "..");
+
+const CONTRACTS_SRC = path.join(ROOT, "contracts", "deployments", "sepolia", "Aura.json");
+
+const DEST = path.join(ROOT, "aura-web", "src", "generated", "deployed_sepolia.json");
+
+async function main() {
+  console.log("\u2705 Sync started...");
+
+  try {
+    const artifact = await fs.readJson(CONTRACTS_SRC);
+
+    const deployed = {
+      address: artifact.address,
+      abi: artifact.abi,
+    };
+
+    await fs.ensureDir(path.dirname(DEST));
+    await fs.writeJson(DEST, deployed, { spaces: 2 });
+
+    console.log("\u2705 Synced to:", DEST);
+  } catch (err) {
+    console.error("\u274C Ошибка sync:", err.message);
+    process.exit(1);
+  }
+}
+
+main();

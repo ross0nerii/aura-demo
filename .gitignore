@@ -23,3 +23,9 @@ tmp
 coverage.json
 pnpm-lock.yaml
 yarn.lock
+.env
+node_modules/
+.env
+node_modules/
+.env
+node_modules/
