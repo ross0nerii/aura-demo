@@ -1,18 +1,32 @@
-const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
-const { ethers } = require("ethers");
+require('dotenv').config();
+const { ethers } = require('ethers');
 
-const addr = "0xB87Fd9C896c1d2613384f20a8e490C0C9705051A";
-const abi  = ["function depositLiquidity() external payable"];
+const RPC  = process.env.SEPOLIA_RPC_URL;
+const PK   = process.env.PRIVATE_KEY;
+const ADDR = process.env.CONTRACT_ADDRESS;
+
+if (!RPC || !PK || !ADDR) {
+  console.error('Missing SEPOLIA_RPC_URL / PRIVATE_KEY / CONTRACT_ADDRESS in .env');
+  process.exit(1);
+}
+
+// сумма из аргумента или из ENV, по умолчанию 0.05
+const amountEth = process.argv[2] || process.env.DEPOSIT_ETH || "0.05";
 
 (async () => {
-  const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-  const wallet   = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-  const c = new ethers.Contract(addr, abi, wallet);
+  try {
+    const provider = new ethers.JsonRpcProvider(RPC);
+    const wallet   = new ethers.Wallet(PK, provider);
 
-  console.log("Sending deposit 0.5 ETH...");
-  const tx = await c.depositLiquidity({ value: ethers.parseEther("0.5") });
-  console.log("tx hash:", tx.hash);
-  await tx.wait();
-  console.log("✅ Deposited. Check Etherscan tx.");
+    const ABI = [ "function depositLiquidity() external payable" ];
+    const c = new ethers.Contract(ADDR, ABI, wallet);
+
+    const tx = await c.depositLiquidity({ value: ethers.parseEther(amountEth) });
+    console.log(`deposit ${amountEth} ETH tx:`, tx.hash);
+    await tx.wait();
+    console.log('✅ deposit done');
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
 })();
