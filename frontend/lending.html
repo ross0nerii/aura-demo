@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏦 Aura Lending</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh; color: white;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card { 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 20px; padding: 30px; margin: 20px 0; 
+            backdrop-filter: blur(15px);
+        }
+        button { 
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white; border: none; padding: 15px 30px; 
+            border-radius: 50px; cursor: pointer; font-size: 16px;
+            margin: 10px; transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-2px); }
+        input { 
+            padding: 15px; border-radius: 15px; border: none; 
+            margin: 10px; font-size: 16px; width: 200px;
+            background: rgba(255,255,255,0.1); color: white;
+        }
+        input::placeholder { color: rgba(255,255,255,0.7); }
+        .hidden { display: none; }
+        .log { 
+            background: rgba(0,0,0,0.4); padding: 15px; 
+            border-radius: 10px; font-family: monospace; 
+            font-size: 14px; max-height: 200px; overflow-y: auto; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Aura Lending</h1>
+            <p>Confidential P2P Lending Platform</p>
+            <p><small>Contract: 0x2EF5414c4Ee29F6dA285A1851fB389A5dF96d572</small></p>
+        </div>
+
+        <div class="card">
+            <h2>💼 Wallet Connection</h2>
+            <button id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+            <div id="walletInfo" class="hidden">
+                <p>Address: <span id="walletAddress"></span></p>
+                <p>ETH Balance: <span id="ethBalance"></span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💰 Deposit</h2>
+            <input type="number" id="depositAmount" placeholder="Amount (ETH)" value="0.01" step="0.001">
+            <button onclick="deposit()">Deposit ETH</button>
+            <p>Your Balance: <span id="userBalance">0</span> ETH</p>
+        </div>
+
+        <div class="card">
+            <h2>📈 Borrow</h2>
+            <p>Your Tier: <span id="tierDisplay">Bronze (15%)</span></p>
+            <input type="number" id="loanAmount" placeholder="Loan amount" value="0.1" step="0.001">
+            <button onclick="borrow()">Take Loan</button>
+            <button onclick="updateTier()">Update Tier</button>
+            <p>Your Debt: <span id="userDebt">0</span> ETH</p>
+        </div>
+
+        <div class="card">
+            <h2>💸 Repay</h2>
+            <input type="number" id="repayAmount" placeholder="Repay amount" step="0.001">
+            <button onclick="repay()">Repay Loan</button>
+        </div>
+
+        <div class="card">
+            <h2>🏊 Pool</h2>
+            <p>Total Pool: <span id="poolBalance">0</span> ETH</p>
+            <input type="number" id="contributeAmount" placeholder="Contribute" value="0.01" step="0.001">
+            <button onclick="contribute()">Contribute to Pool</button>
+        </div>
+
+        <div class="card">
+            <h2>📝 Transaction Log</h2>
+            <div id="txLog" class="log">Ready to start lending!</div>
+        </div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0x2EF5414c4Ee29F6dA285A1851fB389A5dF96d572";
+        const CONTRACT_ABI = [
+            "function deposit() external payable",
+            "function borrow(uint256 amount) external",
+            "function repay() external payable", 
+            "function contributeToPool() external payable",
+            "function updateTier() external",
+            "function getBalance() external view returns (uint256)",
+            "function getDebtAmount() external view returns (uint256)",
+            "function getUserTier() external view returns (uint8)",
+            "function hasOutstandingDebt() external view returns (bool)",
+            "function getContribution() external view returns (uint256)",
+            "function getPoolBalance() external view returns (uint256)"
+        ];
+
+        let provider, signer, contract, userAccount;
+        
+        function log(message) {
+            const txLog = document.getElementById('txLog');
+            const time = new Date().toLocaleTimeString();
+            txLog.innerHTML = `[${time}] ${message}<br>` + txLog.innerHTML;
+        }
+
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    alert('Please install MetaMask!');
+                    return;
+                }
+
+                log('🔄 Connecting wallet...');
+                
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                userAccount = await signer.getAddress();
+                
+                // Create contract instance
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                // Check network
+                const network = await provider.getNetwork();
+                if (network.chainId !== 11155111) {
+                    alert('Please switch to Sepolia testnet!');
+                    return;
+                }
+
+                // Update UI
+                document.getElementById('walletAddress').textContent = userAccount;
+                document.getElementById('connectBtn').textContent = 'Connected ✅';
+                document.getElementById('walletInfo').classList.remove('hidden');
+
+                // Update data
+                await updateAllData();
+                
+                log('✅ Wallet connected successfully!');
+                
+            } catch (error) {
+                log('❌ Connection failed: ' + error.message);
+                console.error('Connection error:', error);
+            }
+        }
+
+        async function updateAllData() {
+            if (!contract || !userAccount) return;
+            
+            try {
+                // Get ETH balance
+                const ethBalance = await provider.getBalance(userAccount);
+                document.getElementById('ethBalance').textContent = 
+                    ethers.utils.formatEther(ethBalance).substring(0,6) + ' ETH';
+
+                // Get contract data
+                const balance = await contract.getBalance();
+                const debt = await contract.getDebtAmount();
+                const tier = await contract.getUserTier();
+                const contribution = await contract.getContribution();
+                const poolBalance = await contract.getPoolBalance();
+
+                // Update UI
+                document.getElementById('userBalance').textContent = 
+                    ethers.utils.formatEther(balance).substring(0,6);
+                document.getElementById('userDebt').textContent = 
+                    ethers.utils.formatEther(debt).substring(0,6);
+                document.getElementById('poolBalance').textContent = 
+                    ethers.utils.formatEther(poolBalance).substring(0,6);
+
+                const tierNames = ['Bronze (15%)', 'Silver (10%)', 'Gold (5%)'];
+                document.getElementById('tierDisplay').textContent = tierNames[tier] || 'Bronze (15%)';
+                
+                log('📊 Data updated successfully');
+                
+            } catch (error) {
+                log('⚠️ Error updating data: ' + error.message);
+                console.error('Update error:', error);
+            }
+        }
+
+        async function deposit() {
+            if (!contract) {
+                alert('Please connect your wallet first!');
+                return;
+            }
+            
+            try {
+                const amount = document.getElementById('depositAmount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Depositing ${amount} ETH...`);
+                
+                const tx = await contract.deposit({ 
+                    value: ethers.utils.parseEther(amount.toString())
+                });
+                
+                log(`📝 Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                
+                log(`✅ Deposited ${amount} ETH successfully!`);
+                await updateAllData();
+                
+            } catch (error) {
+                log('❌ Deposit failed: ' + error.message);
+                console.error('Deposit error:', error);
+            }
+        }
+
+        async function borrow() {
+            if (!contract) {
+                alert('Please connect your wallet first!');
+                return;
+            }
+            
+            try {
+                const amount = document.getElementById('loanAmount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Taking loan of ${amount} ETH...`);
+                
+                const tx = await contract.borrow(ethers.utils.parseEther(amount.toString()));
+                log(`📝 Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                
+                log(`✅ Loan of ${amount} ETH approved!`);
+                await updateAllData();
+                
+            } catch (error) {
+                log('❌ Borrow failed: ' + error.message);
+                console.error('Borrow error:', error);
+            }
+        }
+
+        async function repay() {
+            if (!contract) {
+                alert('Please connect your wallet first!');
+                return;
+            }
+            
+            try {
+                const amount = document.getElementById('repayAmount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Repaying ${amount} ETH...`);
+                
+                const tx = await contract.repay({ 
+                    value: ethers.utils.parseEther(amount.toString())
+                });
+                
+                log(`📝 Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                
+                log(`✅ Repaid ${amount} ETH successfully!`);
+                await updateAllData();
+                
+            } catch (error) {
+                log('❌ Repay failed: ' + error.message);
+                console.error('Repay error:', error);
+            }
+        }
+
+        async function contribute() {
+            if (!contract) {
+                alert('Please connect your wallet first!');
+                return;
+            }
+            
+            try {
+                const amount = document.getElementById('contributeAmount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Contributing ${amount} ETH to pool...`);
+                
+                const tx = await contract.contributeToPool({ 
+                    value: ethers.utils.parseEther(amount.toString())
+                });
+                
+                log(`📝 Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                
+                log(`✅ Contributed ${amount} ETH to pool!`);
+                await updateAllData();
+                
+            } catch (error) {
+                log('❌ Contribution failed: ' + error.message);
+                console.error('Contribution error:', error);
+            }
+        }
+
+        async function updateTier() {
+            if (!contract) {
+                alert('Please connect your wallet first!');
+                return;
+            }
+            
+            try {
+                log('🔄 Updating your tier...');
+                
+                const tx = await contract.updateTier();
+                log(`📝 Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                
+                log('✅ Tier updated successfully!');
+                await updateAllData();
+                
+            } catch (error) {
+                log('❌ Tier update failed: ' + error.message);
+                console.error('Tier update error:', error);
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            log('🌟 Aura Lending ready! Contract: ' + CONTRACT_ADDRESS);
+            log('💡 Click "Connect MetaMask" to start lending!');
+        });
+    </script>
+</body>
+</html>

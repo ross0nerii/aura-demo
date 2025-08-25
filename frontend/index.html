@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Aura Demo - Governance Platform</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+        }
+        .card { 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 30px; 
+            margin: 20px 0; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        button { 
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 10px;
+            transition: transform 0.3s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        input { 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: none; 
+            margin: 10px; 
+            font-size: 16px;
+            width: 200px;
+        }
+        .status { 
+            background: rgba(0,0,0,0.2); 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin: 10px 0; 
+        }
+        .hidden { display: none; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+        }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 Aura Demo</h1>
+            <p>Confidential Governance Platform on Sepolia</p>
+            <p><small>Contract: 0xB456e97252EbA51B37aa6fFFE00bC2eC7f3BA809</small></p>
+        </div>
+
+        <div class="card">
+            <h2>💰 Wallet Connection</h2>
+            <button id="connectBtn">Connect MetaMask</button>
+            <div id="walletInfo" class="status hidden">
+                <p>Connected: <span id="walletAddress"></span></p>
+                <p>Network: <span id="networkName"></span></p>
+                <p>ETH Balance: <span id="ethBalance"></span></p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🪙 Token Management</h2>
+                <div>
+                    <input type="number" id="mintAmount" placeholder="Amount to mint" value="1000">
+                    <button id="mintBtn">Mint Tokens</button>
+                </div>
+                <div>
+                    <input type="text" id="transferTo" placeholder="Recipient address">
+                    <input type="number" id="transferAmount" placeholder="Amount">
+                    <button id="transferBtn">Transfer</button>
+                </div>
+                <div class="status">
+                    <p>Your Balance: <span id="tokenBalance">0</span></p>
+                    <p>Voting Power: <span id="votingPower">0</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🏛️ Governance</h2>
+                <div>
+                    <input type="text" id="proposalTitle" placeholder="Proposal title">
+                    <button id="createProposalBtn">Create Proposal</button>
+                </div>
+                <div>
+                    <input type="number" id="proposalId" placeholder="Proposal ID" value="0">
+                    <input type="number" id="voteWeight" placeholder="Vote weight">
+                    <button id="voteBtn">Vote</button>
+                </div>
+                <div class="status">
+                    <p>Total Proposals: <span id="proposalCount">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Proposals</h2>
+            <button id="loadProposalsBtn">Load Proposals</button>
+            <div id="proposalsList"></div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Transaction Log</h2>
+            <div id="txLog" class="status">Ready to interact...</div>
+        </div>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0xB456e97252EbA51B37aa6fFFE00bC2eC7f3BA809";
+        const CONTRACT_ABI = [
+            "function mint(uint256 amount) external",
+            "function transfer(address to, uint256 amount) external",
+            "function createProposal(string memory title) external returns (uint256)",
+            "function vote(uint256 proposalId, uint256 weight) external",
+            "function getBalance(address account) external view returns (uint256)",
+            "function getVotingPower(address account) external view returns (uint256)",
+            "function getProposalCount() external view returns (uint256)",
+            "function proposalTitles(uint256) external view returns (string)",
+            "function proposalCreators(uint256) external view returns (address)",
+            "function proposalActive(uint256) external view returns (bool)",
+            "function getProposalVotes(uint256) external view returns (uint256)",
+            "function totalSupply() external view returns (uint256)",
+            "event TokensMinted(address indexed to, uint256 amount)",
+            "event Transfer(address indexed from, address indexed to, uint256 amount)",
+            "event ProposalCreated(uint256 indexed proposalId, string title, address creator)"
+        ];
+
+        let provider, signer, contract, userAccount;
+
+        function log(message) {
+            const txLog = document.getElementById('txLog');
+            const time = new Date().toLocaleTimeString();
+            txLog.innerHTML = `[${time}] ${message}<br>` + txLog.innerHTML;
+        }
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    alert('Please install MetaMask!');
+                    return;
+                }
+
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                userAccount = await signer.getAddress();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                // Check network
+                const network = await provider.getNetwork();
+                if (network.chainId !== 11155111) {
+                    alert('Please switch to Sepolia testnet!');
+                    return;
+                }
+
+                // Update UI
+                document.getElementById('walletAddress').textContent = userAccount;
+                document.getElementById('networkName').textContent = network.name;
+                document.getElementById('connectBtn').textContent = 'Connected ✅';
+                document.getElementById('walletInfo').classList.remove('hidden');
+
+                await updateBalances();
+                log('🟢 Wallet connected successfully!');
+
+            } catch (error) {
+                log('🔴 Connection failed: ' + error.message);
+            }
+        }
+
+        async function updateBalances() {
+            try {
+                const ethBalance = await provider.getBalance(userAccount);
+                document.getElementById('ethBalance').textContent = ethers.utils.formatEther(ethBalance).substring(0,6) + ' ETH';
+
+                const tokenBalance = await contract.getBalance(userAccount);
+                const votingPower = await contract.getVotingPower(userAccount);
+                const proposalCount = await contract.getProposalCount();
+
+                document.getElementById('tokenBalance').textContent = tokenBalance.toString();
+                document.getElementById('votingPower').textContent = votingPower.toString();
+                document.getElementById('proposalCount').textContent = proposalCount.toString();
+
+            } catch (error) {
+                log('⚠️ Error updating balances: ' + error.message);
+            }
+        }
+
+        async function mintTokens() {
+            try {
+                const amount = document.getElementById('mintAmount').value;
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Minting ${amount} tokens...`);
+                const tx = await contract.mint(amount);
+                log(`📝 Transaction sent: ${tx.hash}`);
+                
+                await tx.wait();
+                log(`✅ Minted ${amount} tokens successfully!`);
+                await updateBalances();
+
+            } catch (error) {
+                log('🔴 Mint failed: ' + error.message);
+            }
+        }
+
+        async function transferTokens() {
+            try {
+                const to = document.getElementById('transferTo').value;
+                const amount = document.getElementById('transferAmount').value;
+                
+                if (!ethers.utils.isAddress(to)) {
+                    alert('Please enter a valid address');
+                    return;
+                }
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                log(`🔄 Transferring ${amount} tokens to ${to.substring(0,8)}...`);
+                const tx = await contract.transfer(to, amount);
+                log(`📝 Transaction sent: ${tx.hash}`);
+                
+                await tx.wait();
+                log(`✅ Transfer completed successfully!`);
+                await updateBalances();
+
+            } catch (error) {
+                log('🔴 Transfer failed: ' + error.message);
+            }
+        }
+
+        async function createProposal() {
+            try {
+                const title = document.getElementById('proposalTitle').value;
+                if (!title) {
+                    alert('Please enter a proposal title');
+                    return;
+                }
+
+                log(`🔄 Creating proposal: "${title}"...`);
+                const tx = await contract.createProposal(title);
+                log(`📝 Transaction sent: ${tx.hash}`);
+                
+                await tx.wait();
+                log(`✅ Proposal created successfully!`);
+                await updateBalances();
+
+            } catch (error) {
+                log('🔴 Proposal creation failed: ' + error.message);
+            }
+        }
+
+        async function vote() {
+            try {
+                const proposalId = document.getElementById('proposalId').value;
+                const weight = document.getElementById('voteWeight').value;
+                
+                if (proposalId === '' || weight === '' || weight <= 0) {
+                    alert('Please enter valid proposal ID and vote weight');
+                    return;
+                }
+
+                log(`🔄 Voting on proposal ${proposalId} with weight ${weight}...`);
+                const tx = await contract.vote(proposalId, weight);
+                log(`📝 Transaction sent: ${tx.hash}`);
+                
+                await tx.wait();
+                log(`✅ Vote cast successfully!`);
+
+            } catch (error) {
+                log('🔴 Voting failed: ' + error.message);
+            }
+        }
+
+        async function loadProposals() {
+            try {
+                const count = await contract.getProposalCount();
+                const proposalsDiv = document.getElementById('proposalsList');
+                proposalsDiv.innerHTML = '';
+
+                for (let i = 0; i < count; i++) {
+                    const title = await contract.proposalTitles(i);
+                    const creator = await contract.proposalCreators(i);
+                    const active = await contract.proposalActive(i);
+                    const votes = await contract.getProposalVotes(i);
+
+                    proposalsDiv.innerHTML += `
+                        <div class="status" style="margin: 10px 0;">
+                            <strong>Proposal ${i}:</strong> ${title}<br>
+                            <small>Creator: ${creator.substring(0,10)}... | Votes: ${votes} | Status: ${active ? 'Active' : 'Ended'}</small>
+                        </div>
+                    `;
+                }
+
+                log(`📋 Loaded ${count} proposals`);
+
+            } catch (error) {
+                log('🔴 Loading proposals failed: ' + error.message);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('connectBtn').addEventListener('click', connectWallet);
+        document.getElementById('mintBtn').addEventListener('click', mintTokens);
+        document.getElementById('transferBtn').addEventListener('click', transferTokens);
+        document.getElementById('createProposalBtn').addEventListener('click', createProposal);
+        document.getElementById('voteBtn').addEventListener('click', vote);
+        document.getElementById('loadProposalsBtn').addEventListener('click', loadProposals);
+
+        // Auto-connect if MetaMask is already connected
+        window.addEventListener('load', async () => {
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectWallet();
+            }
+        });
+
+        log('🌟 Aura Demo ready! Connect your wallet to start.');
+    </script>
+</body>
+</html>
